@@ -38,18 +38,15 @@ You're reading it!
 
 ####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
-The code for this step is contained in the first code cell of the IPython notebook (or in lines # through # of the file called `some_file.py`).  
+[HOG()](https://github.com/subhash/CarND-Vehicle-Detection/blob/master/vehicle-tracking.py#L77) 
 
-I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
+I observed instances of the image classes - `vehicle` and `non-vehicle`:
 
-![alt text][image1]
+![alt text][vehicle_non]
 
-I then explored different color spaces and different `skimage.hog()` parameters (`orientations`, `pixels_per_cell`, and `cells_per_block`).  I grabbed random images from each of the two classes and displayed them to get a feel for what the `skimage.hog()` output looks like.
+I parameterized the `skimage.hog()` function (`orientations`, `pixels_per_cell`, and `cells_per_block`) so that the contrast between the two classes will stand out:
 
-Here is an example using the `YCrCb` color space and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
-
-
-![alt text][image2]
+![alt text][vehicle_non_hog]
 
 ####2. Explain how you settled on your final choice of HOG parameters.
 
@@ -57,46 +54,41 @@ I tried various combinations of parameters and...
 
 ####3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
-I trained a linear SVM using...
+[Classifier.train()](https://github.com/subhash/CarND-Vehicle-Detection/blob/master/vehicle-tracking.py#L199)
+
+For each image, I extract the HOG features and augment it with spatially binned (`32x32`) features and color histogram features (`bins=9`). This set of features is unravelled and trained by a SVM classifier with the appropriate labels. Care is taken to shuffle the samples first so that adjacency does not cause a bias. A 20% cross-validation test is extracted in order to test the accuracy.
 
 ###Sliding Window Search
 
 ####1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
-I decided to search random window positions at random scales all over the image and came up with this (ok just kidding I didn't actually ;):
+[Classifier.find_predictions()](https://github.com/subhash/CarND-Vehicle-Detection/blob/master/vehicle-tracking.py#L220)
 
-![alt text][image3]
+We first scale the image as specified and then step through the image in `x` and `y`. The step size determines the overlap and I decided to go with `2 * cell_size` through experiments. The scales are provided by upstream code and depends on what kind of search is happening. For eg. for a full-fledged search I use `0.5, 0.66, 1.0` and for tracking vehicles, `0.5, 0.75`. The scales are determined how far the object being searched is from the camera's POV.
+
 
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 
-Ultimately I searched on two scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector, which provided a nice result.  Here are some example images:
+Here is the pipeline running on the test images. The cars in the images are being identified and bounded correctly. 
 
-![alt text][image4]
+![alt text][test_pipeline]
+
+The classifier first starts with a broad-based search for vehicles across the image at various scales. Once vehicles are detected, we switch to optimal search - which includes searching around existing vehicles, and searching in the origin spaces (horizon, left and right corners) only.
 ---
 
 ### Video Implementation
 
 ####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my video result](https://www.youtube.com/watch?v=PRSXPaGTiGM)
 
 
 ####2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
-I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions.  I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap.  I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected.  
+The classifier generates bounding boxes (at various scales) where predictions are favourable. We use this to generate a heatmap and threshold values to retain maximally possible pixels. Using `scipy.ndimage.measurements.label()`, we separate these areas into different possible vehicle estimations and bound each estimation with a final box that represents a vehicle's position. Here are some examples of prediction boxes, heatmaps and final bounding boxes:
 
-Here's an example result showing the heatmap from a series of frames of video, the result of `scipy.ndimage.measurements.label()` and the bounding boxes then overlaid on the last frame of video:
+![alt text][heatmap]
 
-### Here are six frames and their corresponding heatmaps:
-
-![alt text][image5]
-
-### Here is the output of `scipy.ndimage.measurements.label()` on the integrated heatmap from all six frames:
-![alt text][image6]
-
-### Here the resulting bounding boxes are drawn onto the last frame in the series:
-![alt text][image7]
-
-
+The other way I prevent false positives is to recognize that an object cannot suddenly appear in a pipeline. It has to originate from either of the corners or the horizon in previous frames. 
 
 ---
 
@@ -104,5 +96,6 @@ Here's an example result showing the heatmap from a series of frames of video, t
 
 ####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
-
+* The biggest issue is deciding on the tradeoff between searching better and searching faster. More scales and more windows give better estimates but slows down the process
+* The pipeline logic needs its own insights. My logic fails around sharp curves because the search area is affected
+* The pipeline also gets confused with overlapping cars. This could be improved by each vehicles picking it's own updates from the list of prediction boxes
