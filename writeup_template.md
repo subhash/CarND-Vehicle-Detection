@@ -15,14 +15,10 @@ The goals / steps of this project are the following:
 * Estimate a bounding box for vehicles detected.
 
 [//]: # (Image References)
-[image1]: ./examples/car_not_car.png
-[image2]: ./examples/HOG_example.jpg
-[image3]: ./examples/sliding_windows.jpg
-[image4]: ./examples/sliding_window.jpg
-[image5]: ./examples/bboxes_and_heat.png
-[image6]: ./examples/labels_map.png
-[image7]: ./examples/output_bboxes.png
-[video1]: ./project_video.mp4
+[vehicle_non]: ./output_images/vehicle_non.png
+[vehicle_non_hog]: ./output_images/vehicle_non_hog.png
+[test_results]: ./output_images/test_results.png
+[heatmap]: ./output_images/heatmap.png
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
 ###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
@@ -71,9 +67,11 @@ We first scale the image as specified and then step through the image in `x` and
 
 Here is the pipeline running on the test images. The cars in the images are being identified and bounded correctly. 
 
-![alt text][test_pipeline]
+![alt text][test_results]
+
 
 The classifier first starts with a broad-based search for vehicles across the image at various scales. Once vehicles are detected, we switch to optimal search - which includes searching around existing vehicles, and searching in the origin spaces (horizon, left and right corners) only.
+
 ---
 
 ### Video Implementation
