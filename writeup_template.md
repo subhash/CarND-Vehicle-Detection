@@ -19,6 +19,9 @@ The goals / steps of this project are the following:
 [vehicle_non_hog]: ./output_images/vehicle_non_hog.png
 [test_results]: ./output_images/test_results.png
 [heatmap]: ./output_images/heatmap.png
+[hog_params]: ./output_images/hog_params.png
+[cars]: ./output_images/cars.png
+[color_space]: ./output_images/color_space.png
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
 ###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
@@ -49,6 +52,26 @@ I parameterized the `skimage.hog()` function (`orientations`, `pixels_per_cell`,
 I tried various combinations of parameters and...
 
 ####3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
+
+[Classifier.extract_feature_spaces()](https://github.com/subhash/CarND-Vehicle-Detection/blob/master/vehicle-tracking.py#L185)
+
+I chose the `YCrCb` color space because it nicely separates the luminosity aspects from the color information and I speculated that'll help the classifier recognize shapes of cars regardless of their color. 
+
+For example, consider the follwing cars:
+
+![alt text][cars]
+
+When separated into their `YCrCb` color spaces, the Y channel of both cars look quite similar and demonstrate the shape. The Cr and Cb channels of the first car are almost uniform indicating that the car is of a neutral color. The only part that stands out are the tail-lights in the Cr channel because they are red. This is true of the red car in the second picture too. You can see a semblance of its shape in the Cr channel. I thought this level of separation of color and shape information would be useful to the classifier
+
+![alt text][color_space]
+
+I chose the following HOG parameters: `pix_per_cell=8, cell_per_block=2, orient=9` because of the following reasons:
+* `8x8` seemed to be a sufficient size to hold the shape of a car
+* `9` orientations would capture the essence of gradients in the shape of a car
+* They reduced the feature space to a manageable size (`7*7*2*2*9`)
+When I tried subjecting the sample vehicles to this parameter configuration, HOG was able to extract the salient features - shapes of cars in the Y channel, tail-lights in the Cr channel etc
+
+![alt text][hog_params]
 
 [Classifier.train()](https://github.com/subhash/CarND-Vehicle-Detection/blob/master/vehicle-tracking.py#L199)
 
