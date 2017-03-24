@@ -15,14 +15,13 @@ The goals / steps of this project are the following:
 * Estimate a bounding box for vehicles detected.
 
 [//]: # (Image References)
-[image1]: ./examples/car_not_car.png
-[image2]: ./examples/HOG_example.jpg
-[image3]: ./examples/sliding_windows.jpg
-[image4]: ./examples/sliding_window.jpg
-[image5]: ./examples/bboxes_and_heat.png
-[image6]: ./examples/labels_map.png
-[image7]: ./examples/output_bboxes.png
-[video1]: ./project_video.mp4
+[vehicle_non]: ./output_images/vehicle_non.png
+[vehicle_non_hog]: ./output_images/vehicle_non_hog.png
+[test_results]: ./output_images/test_results.png
+[heatmap]: ./output_images/heatmap.png
+[hog_params]: ./output_images/hog_params.png
+[cars]: ./output_images/cars.png
+[color_space]: ./output_images/color_space.png
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
 ###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
@@ -54,6 +53,26 @@ I tried various combinations of parameters and...
 
 ####3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
+[Classifier.extract_feature_spaces()](https://github.com/subhash/CarND-Vehicle-Detection/blob/master/vehicle-tracking.py#L185)
+
+I chose the `YCrCb` color space because it nicely separates the luminosity aspects from the color information and I speculated that'll help the classifier recognize shapes of cars regardless of their color. 
+
+For example, consider the follwing cars:
+
+![alt text][cars]
+
+When separated into their `YCrCb` color spaces, the Y channel of both cars look quite similar and demonstrate the shape. The Cr and Cb channels of the first car are almost uniform indicating that the car is of a neutral color. The only part that stands out are the tail-lights in the Cr channel because they are red. This is true of the red car in the second picture too. You can see a semblance of its shape in the Cr channel. I thought this level of separation of color and shape information would be useful to the classifier
+
+![alt text][color_space]
+
+I chose the following HOG parameters: `pix_per_cell=8, cell_per_block=2, orient=9` because of the following reasons:
+* `8x8` seemed to be a sufficient size to hold the shape of a car
+* `9` orientations would capture the essence of gradients in the shape of a car
+* They reduced the feature space to a manageable size (`7*7*2*2*9`)
+When I tried subjecting the sample vehicles to this parameter configuration, HOG was able to extract the salient features - shapes of cars in the Y channel, tail-lights in the Cr channel etc
+
+![alt text][hog_params]
+
 [Classifier.train()](https://github.com/subhash/CarND-Vehicle-Detection/blob/master/vehicle-tracking.py#L199)
 
 For each image, I extract the HOG features and augment it with spatially binned (`32x32`) features and color histogram features (`bins=9`). This set of features is unravelled and trained by a SVM classifier with the appropriate labels. Care is taken to shuffle the samples first so that adjacency does not cause a bias. A 20% cross-validation test is extracted in order to test the accuracy.
@@ -71,9 +90,11 @@ We first scale the image as specified and then step through the image in `x` and
 
 Here is the pipeline running on the test images. The cars in the images are being identified and bounded correctly. 
 
-![alt text][test_pipeline]
+![alt text][test_results]
+
 
 The classifier first starts with a broad-based search for vehicles across the image at various scales. Once vehicles are detected, we switch to optimal search - which includes searching around existing vehicles, and searching in the origin spaces (horizon, left and right corners) only.
+
 ---
 
 ### Video Implementation
